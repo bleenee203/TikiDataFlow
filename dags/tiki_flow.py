@@ -1,6 +1,6 @@
 from airflow import DAG
 
-from datetime import datetime
+from datetime import datetime,timedelta
 from airflow.operators.python import PythonOperator
 
 import sys
@@ -17,7 +17,8 @@ dag = DAG(
     dag_id="tiki_flow",
     default_args={
         'owner': "BichLy",
-        'start_date': datetime(2024, 10, 1)
+        'start_date': datetime(2024, 10, 1),
+        'execution_timeout': timedelta(minutes=120),
     },
     schedule_interval=None,
     catchup=False
