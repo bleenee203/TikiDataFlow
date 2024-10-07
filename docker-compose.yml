@@ -6,15 +6,21 @@ services:
     entrypoint: [ "/opt/airflow/script/entrypoint.sh" ]
     depends_on:
       - postgres
+      - chrome
     environment:
-      # Cấu hình kết nối database
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-      # Load example DAGs (True/False)
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
-      # Cấu hình Executor (SequentialExecutor, LocalExecutor, CeleryExecutor, ...)
       - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
       - AIRFLOW__WEBSERVER_BASE_URL=http://localhost:8080
       - AIRFLOW__WEBSERVER__SECRET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"          # Giới hạn 1.5 CPU cores
+          memory: 3g           # Giới hạn bộ nhớ 3GB
+        reservations:
+          cpus: "1.0"          # Tài nguyên tối thiểu là 1 CPU
+          memory: 1.5g         # Bộ nhớ tối thiểu là 1.5GB
     logging:
       options:
         max-size: 10m
@@ -25,23 +31,41 @@ services:
       - ./requirements.txt:/opt/airflow/requirements.txt
       - ./data:/opt/airflow/data
       - ./pipelines:/opt/airflow/pipelines
-      # - ./gusml.egg-info:/opt/airflow/gusml.egg-info
-      # - ./constants.py:/opt/airflow/constants.py
-      # - ./utils:/opt/airflow/utils
+      - /dev/shm:/dev/shm
     ports:
       - "8080:8080"
-    # healthcheck:
-    #   test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
-    #   interval: 30s
-    #   timeout: 30s
-    #   retries: 3
-    #   start_period: 1m30s
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 10s
       retries: 5
       start_period: 5s
     restart: always
+    networks:
+      - football
+    # user: "root"
+
+  chrome:
+    image: selenium/standalone-chrome
+    ports:
+      - "4444:4444"
+    volumes:
+      - /dev/shm:/dev/shm
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:4444"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 1m
+    environment:
+      - SE_NODE_MAX_SESSIONS=5 
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"         # Giới hạn 2 CPU cores cho Chrome
+          memory: 4g          # Giới hạn bộ nhớ 4GB cho Chrome
+        reservations:
+          cpus: "1.0"         # Tài nguyên tối thiểu là 1 CPU
+          memory: 2g          # Bộ nhớ tối thiểu là 2GB
     networks:
       - football
 
@@ -55,6 +79,14 @@ services:
       options:
         max-size: 10m
         max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"          # Giới hạn 0.5 CPU cores cho Postgres
+          memory: 1g           # Giới hạn bộ nhớ 1GB
+        reservations:
+          cpus: "0.2"          # Tài nguyên tối thiểu là 0.2 CPU
+          memory: 512m         # Bộ nhớ tối thiểu là 512MB
     networks:
       - football
 
@@ -62,23 +94,29 @@ services:
     image: apache/airflow:2.6.0-python3.9
     depends_on:
       - webserver
-        # condition: service_healthy
+      - chrome  
     volumes:
       - ./dags:/opt/airflow/dags
       - ./requirements.txt:/opt/airflow/requirements.txt
       - ./data:/opt/airflow/data
       - ./pipelines:/opt/airflow/pipelines
-      # - ./gusml.egg-info:/opt/airflow/gusml.egg-info
-
     environment:
       - LOAD_EX=n
       - Executor=Sequential
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       - AIRFLOW__WEBSERVER_BASE_URL=http://localhost:8080
       - AIRFLOW__WEBSERVER__SECRET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"           # Giới hạn 1.5 CPU cores
+          memory: 2.5g          # Giới hạn bộ nhớ 2.5GB
+        reservations:
+          cpus: "1.0"           # Tài nguyên tối thiểu là 1 CPU
+          memory: 1.5g          # Bộ nhớ tối thiểu là 1.5GB
     command: bash -c "pip install --no-cache-dir -r ./requirements.txt && airflow db upgrade && airflow scheduler"
     networks:
       - football
-
+      
 networks:
   football:
