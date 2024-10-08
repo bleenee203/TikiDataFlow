@@ -35,7 +35,7 @@ class func:
         elif elem_type == 'info_elems':
             info_elems = driver.find_elements(By.CSS_SELECTOR, elem)
             title_elem, detail_info_elem, describe_elem = full_info_elem[0], full_info_elem[1], full_info_elem[2]
-            info, describe, seller, seller_star, seller_reviews_quantity, seller_follow = np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+            info, describe, seller, seller_star, seller_reviews_quantity = np.nan, np.nan, np.nan, np.nan, np.nan
             for i in info_elems:
                 try:
                     title = i.find_element(By.CSS_SELECTOR, title_elem)
@@ -58,41 +58,37 @@ class func:
                         describe = np.nan
                         print('describe nan')
                 try:
-                    seller = i.find_element(By.CSS_SELECTOR,'.SellerHeader__SellerHeaderStyled-sc-la7c6v-0.bfJGpi .seller_name').text.split(' ')[0]
-                    print('seller name {sellter}')
+                    seller_header = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".SellerHeader__SellerHeaderStyled-sc-la7c6v-0.bfJGpi"))
+                )
+                    seller = seller_header.find_element(By.CSS_SELECTOR, ".seller-name a span").text
+                    print(f'seller name {seller}')
                 except Exception as e:
                     print(f'seller except: {threading.current_thread().name} - {type(e).__name__}')
                     seller = np.nan
                     print('seller nan')
                 try:
-                    seller_evaluation_elems = i.find_element(By.CSS_SELECTOR, '.item.review')
-                    print('seller evaluation_elems {seller_evaluation_elems}')
+                    seller_evaluation_elems = seller_header.find_element(By.CSS_SELECTOR, '.item.review')
+                    print(f'seller evaluation_elems {seller_evaluation_elems}')
                 except Exception as e:
                     print(f'seller eval except: {threading.current_thread().name} - {type(e).__name__}')
                     seller_evaluation_elems = np.nan
                     print('seller_evaluation nan')
                 try:
                     seller_star = seller_evaluation_elems.find_element(By.CSS_SELECTOR, '.title').text
-                    print('seller star {seller_star}')
+                    print(f'seller star {seller_star}')
                 except Exception as e:
                     print(f'seller star except: {threading.current_thread().name} - {type(e).__name__}')
                     seller_star = np.nan
                     print('seller_star nan')
                 try:
                     seller_reviews_quantity = seller_evaluation_elems.find_element(By.CSS_SELECTOR, '.sub-title').text
-                    print('seller reviews_quantity {seller_reviews_quantity}')
+                    print(f'seller reviews_quantity {seller_reviews_quantity}')
                 except Exception as e:
                     print(f'seller review except: {threading.current_thread().name} - {type(e).__name__}')
                     seller_reviews_quantity = np.nan
                     print('seller_reviews_quantity nan') 
-                try:
-                    seller_follow = i.find_element(By.CSS_SELECTOR, '.item.normal .title').text
-                    print('seller seller_follow {seller_follow}')
-                except Exception as e:
-                    print(f'seller follow except: {threading.current_thread().name} - {type(e).__name__}')
-                    seller_follow = np.nan
-                    print('seller_follow nan')
-            output = (info, describe, seller, seller_star, seller_reviews_quantity, seller_follow)
+            output = (info, describe, seller, seller_star, seller_reviews_quantity)
         else:
             print('no output')
         return output
@@ -246,11 +242,11 @@ class func:
                 print('sale_q nan')
             #full_info
                 
-            info, describe, seller, seller_star, seller_reviews_quantity, seller_follow = func.get_elem(driver, 
+            info, describe, seller, seller_star, seller_reviews_quantity = func.get_elem(driver, 
                                                                                                         info_elem, 
                                                                                                         (title_elem, detail_info_elem, describe_elem), 
                                                                                                         elem_type = 'info_elems')
-            features = [prod_link, cate, img, price, discount, sale_q, rating, info, describe, seller, seller_star, seller_reviews_quantity, seller_follow]
+            features = [prod_link, cate, img, price, discount, sale_q, rating, info, describe, seller, seller_star, seller_reviews_quantity]
             page_features.append(features)
         que.put(page_features)
 
@@ -422,7 +418,6 @@ class TikiCrawler(func):
             "pageLoad": 240,
             "script": 240
         }
-
         chrome_options.set_capability('timeouts', capabilities['timeouts'])
         self.drivers = [
             
@@ -501,16 +496,7 @@ class TikiCrawler(func):
     
     def close(self):
         for driver in self.drivers:
-            # Kiểm tra nếu đối tượng driver tồn tại
-            if driver is not None:
-                # Kiểm tra xem driver có thuộc tính session_id và nó có hợp lệ không
-                if hasattr(driver, 'session_id') and driver.session_id is not None:
-                    print(f"Đang đóng phiên với session_id: {driver.session_id}")
-                    driver.quit()  # Đóng phiên nếu session_id hợp lệ
-                else:
-                    print("Phiên không tồn tại hoặc đã bị đóng.")
-            else:
-                print("Driver không tồn tại, bỏ qua việc đóng.")
+            driver.quit()
 
 
     def save(self, pickle_file_path):
