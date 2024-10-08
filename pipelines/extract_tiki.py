@@ -351,7 +351,7 @@ class func:
 
             result = pd.DataFrame(di)
 
-        elif col.name == 'seller_reviews_quantity' or col.name == 'seller_follow':
+        elif col.name == 'seller_reviews_quantity':
             result = []
             for i in col:
                 try:
@@ -473,7 +473,7 @@ class TikiCrawler(func):
                            'discount', 'sale_quantity', 'rating', 
                            'info', 
                            'describe', 'seller', 'seller_star', 
-                           'seller_reviews_quantity', 'seller_follow']
+                           'seller_reviews_quantity']
             )
             self.all_data = pd.concat([self.all_data, page_df], axis = 0)
             self.idx_page = [i + self.n_browers for i in self.idx_page]
