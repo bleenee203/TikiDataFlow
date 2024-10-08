@@ -5,7 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import ElementClickInterceptedException, TimeoutException, WebDriverException
+from selenium.common.exceptions import ElementClickInterceptedException, TimeoutException, WebDriverException,InvalidSessionIdException
 from time import sleep
 import threading
 from queue import Queue
@@ -57,37 +57,41 @@ class func:
                         print(f'describe except: {threading.current_thread().name} - {type(e).__name__}')
                         describe = np.nan
                         print('describe nan')
-                elif title == 'Thông tin nhà bán':
-                    try:
-                        seller = i.find_element(By.CSS_SELECTOR, '.seller-name').text.split(' ')[0]
-                    except Exception as e:
-                        print(f'seller except: {threading.current_thread().name} - {type(e).__name__}')
-                        seller = np.nan
-                        print('seller nan')
-                    try:
-                        seller_evaluation_elems = i.find_element(By.CSS_SELECTOR, '.item.review')
-                    except Exception as e:
-                        print(f'seller eval except: {threading.current_thread().name} - {type(e).__name__}')
-                        seller_evaluation_elems = np.nan
-                        print('seller_evaluation nan')
-                    try:
-                        seller_star = seller_evaluation_elems.find_element(By.CSS_SELECTOR, '.title').text
-                    except Exception as e:
-                        print(f'seller star except: {threading.current_thread().name} - {type(e).__name__}')
-                        seller_star = np.nan
-                        print('seller_star nan')
-                    try:
-                        seller_reviews_quantity = seller_evaluation_elems.find_element(By.CSS_SELECTOR, '.sub-title').text
-                    except Exception as e:
-                        print(f'seller review except: {threading.current_thread().name} - {type(e).__name__}')
-                        seller_reviews_quantity = np.nan
-                        print('seller_reviews_quantity nan') 
-                    try:
-                        seller_follow = i.find_element(By.CSS_SELECTOR, '.item.normal .title').text
-                    except Exception as e:
-                        print(f'seller follow except: {threading.current_thread().name} - {type(e).__name__}')
-                        seller_follow = np.nan
-                        print('seller_follow nan')
+                try:
+                    seller = i.find_element(By.CSS_SELECTOR,'.SellerHeader__SellerHeaderStyled-sc-la7c6v-0.bfJGpi .seller_name').text.split(' ')[0]
+                    print('seller name {sellter}')
+                except Exception as e:
+                    print(f'seller except: {threading.current_thread().name} - {type(e).__name__}')
+                    seller = np.nan
+                    print('seller nan')
+                try:
+                    seller_evaluation_elems = i.find_element(By.CSS_SELECTOR, '.item.review')
+                    print('seller evaluation_elems {seller_evaluation_elems}')
+                except Exception as e:
+                    print(f'seller eval except: {threading.current_thread().name} - {type(e).__name__}')
+                    seller_evaluation_elems = np.nan
+                    print('seller_evaluation nan')
+                try:
+                    seller_star = seller_evaluation_elems.find_element(By.CSS_SELECTOR, '.title').text
+                    print('seller star {seller_star}')
+                except Exception as e:
+                    print(f'seller star except: {threading.current_thread().name} - {type(e).__name__}')
+                    seller_star = np.nan
+                    print('seller_star nan')
+                try:
+                    seller_reviews_quantity = seller_evaluation_elems.find_element(By.CSS_SELECTOR, '.sub-title').text
+                    print('seller reviews_quantity {seller_reviews_quantity}')
+                except Exception as e:
+                    print(f'seller review except: {threading.current_thread().name} - {type(e).__name__}')
+                    seller_reviews_quantity = np.nan
+                    print('seller_reviews_quantity nan') 
+                try:
+                    seller_follow = i.find_element(By.CSS_SELECTOR, '.item.normal .title').text
+                    print('seller seller_follow {seller_follow}')
+                except Exception as e:
+                    print(f'seller follow except: {threading.current_thread().name} - {type(e).__name__}')
+                    seller_follow = np.nan
+                    print('seller_follow nan')
             output = (info, describe, seller, seller_star, seller_reviews_quantity, seller_follow)
         else:
             print('no output')
@@ -153,7 +157,7 @@ class func:
         func.scroll(driver, 150)
         sleep(2)
         try:
-            func.wait(driver, 50, prod_link_elem)
+            func.wait(driver, 100, prod_link_elem)
             print('pass wait')
             pl = func.get_elem(driver, prod_link_elem, elem_type = 'prod_link')
             print(f'{threading.current_thread().name} - Take Product links succesfully')
@@ -161,7 +165,7 @@ class func:
             print(f'{threading.current_thread().name} - First Product link not exist')
             print(f'Error when get product {str(e)}')
             try:
-                func.wait(driver, 50, preventive_prod_link_elem)
+                func.wait(driver, 100, preventive_prod_link_elem)
                 pl = func.get_elem(driver, preventive_prod_link_elem, elem_type = 'prod_link')
                 print(f'{threading.current_thread().name} - Take prevent Product link succesfully')
             except Exception as e:
@@ -497,11 +501,16 @@ class TikiCrawler(func):
     
     def close(self):
         for driver in self.drivers:
-            # driver.close()
-            try:
-                driver.quit()
-            except InvalidSessionIdException as e:
-                print(f"Phiên đã hết hạn hoặc không tồn tại: {e}")
+            # Kiểm tra nếu đối tượng driver tồn tại
+            if driver is not None:
+                # Kiểm tra xem driver có thuộc tính session_id và nó có hợp lệ không
+                if hasattr(driver, 'session_id') and driver.session_id is not None:
+                    print(f"Đang đóng phiên với session_id: {driver.session_id}")
+                    driver.quit()  # Đóng phiên nếu session_id hợp lệ
+                else:
+                    print("Phiên không tồn tại hoặc đã bị đóng.")
+            else:
+                print("Driver không tồn tại, bỏ qua việc đóng.")
 
 
     def save(self, pickle_file_path):
@@ -564,7 +573,7 @@ def extract_tiki_data():
     crawler = TikiCrawler(
         root_link="https://tiki.vn/sach-truyen-tieng-viet/c316",
         n_browers=2,
-        prod_link_elem = '.style__ProductLink-sc-139nb47-2.cKoUly.product-item',
+        prod_link_elem = '.style__ProductLink-sc-1axza32-2.ezgRFw.product-item',
         category_bar_elem=".breadcrumb",
         image_elem=".image-frame",
         price_elem=".product-price__current-price",
@@ -572,10 +581,10 @@ def extract_tiki_data():
         sales_quantity_elem = '.styles__StyledQuantitySold-sc-1onuk2l-3.eWJdKv',
         rating_elem = '.styles__StyledReview-sc-1onuk2l-1.dRFsZg',
         info_elem = '.WidgetTitle__WidgetContainerStyled-sc-12sadap-0.bufoOo',
-        detail_info_elem = '.WidgetTitle__WidgetContainerStyled-sc-12sadap-0.bufoOo',
+        detail_info_elem = '.WidgetTitle__WidgetContentStyled-sc-12sadap-2.hNNYbU',
         describe_elem = '.style__Wrapper-sc-6as7kb-0.eba-dki.content',
         extend_page_elem = '.btn-more',
-        title_elem = '.Title__TitledStyled-sc-c64ni5-0.iXccQY',
+        title_elem = '.WidgetTitle__WidgetTitleStyled-sc-12sadap-1.bPRVIq',
 #sub_link_elem will be used for crawl detail category in root_link you put
         # sub_link_elem = '.styles__TreeItemStyled-sc-1uq9a9i-2.ThXqv a',
         preventive_prod_link_elem = '.style__ProductLink-sc-139nb47-2.cKoUly.product-item'
