@@ -77,6 +77,17 @@ services:
       - POSTGRES_USER=airflow
       - POSTGRES_PASSWORD=airflow
       - POSTGRES_DB=airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+      # - ./data:/var/lib/postgresql/data
+      - ./data:/opt/airflow/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    ports:
+      - "5432:5432"
     logging:
       options:
         max-size: 10m
@@ -84,7 +95,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"          # Giới hạn 0.5 CPU cores cho Postgres
+          cpus: "1"          # Giới hạn 0.5 CPU cores cho Postgres
           memory: 1g           # Giới hạn bộ nhớ 1GB
         reservations:
           cpus: "0.2"          # Tài nguyên tối thiểu là 0.2 CPU
@@ -124,3 +135,6 @@ services:
       
 networks:
   football:
+
+volumes:
+  postgres-db-volume:
