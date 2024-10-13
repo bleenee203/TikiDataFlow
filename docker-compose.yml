@@ -10,17 +10,17 @@ services:
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
-      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__WEBSERVER_BASE_URL=http://localhost:8080
       - AIRFLOW__WEBSERVER__SECRET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
     deploy:
       resources:
         limits:
-          cpus: "1.5"          # Giới hạn 1.5 CPU cores
-          memory: 3g           # Giới hạn bộ nhớ 3GB
+          cpus: "1.5"  # Limit to 1.5 CPU cores
+          memory: 3g   # Limit memory to 3GB
         reservations:
-          cpus: "1.0"          # Tài nguyên tối thiểu là 1 CPU
-          memory: 1.5g         # Bộ nhớ tối thiểu là 1.5GB
+          cpus: "1.0"  # Minimum of 1 CPU
+          memory: 1.5g # Minimum memory of 1.5GB
     logging:
       options:
         max-size: 10m
@@ -42,7 +42,6 @@ services:
     restart: always
     networks:
       - football
-    # user: "root"
 
   chrome:
     image: selenium/standalone-chrome
@@ -62,11 +61,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "2.0"         # Giới hạn 2 CPU cores cho Chrome
-          memory: 4g          # Giới hạn bộ nhớ 4GB cho Chrome
+          cpus: "2.0"  # Limit to 2 CPU cores for Chrome
+          memory: 4g   # Limit memory to 4GB for Chrome
         reservations:
-          cpus: "1.0"         # Tài nguyên tối thiểu là 1 CPU
-          memory: 2g          # Bộ nhớ tối thiểu là 2GB
+          cpus: "1.0"  # Minimum of 1 CPU
+          memory: 2g   # Minimum memory of 2GB
     networks:
       - football
     restart: always
@@ -79,7 +78,6 @@ services:
       - POSTGRES_DB=airflow
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
-      # - ./data:/var/lib/postgresql/data
       - ./data:/opt/airflow/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
@@ -95,14 +93,26 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1"          # Giới hạn 0.5 CPU cores cho Postgres
-          memory: 1g           # Giới hạn bộ nhớ 1GB
+          cpus: "1"    # Limit to 1 CPU core for Postgres
+          memory: 1g   # Limit memory to 1GB
         reservations:
-          cpus: "0.2"          # Tài nguyên tối thiểu là 0.2 CPU
-          memory: 512m         # Bộ nhớ tối thiểu là 512MB
+          cpus: "0.2"  # Minimum of 0.2 CPU cores
+          memory: 512m # Minimum memory of 512MB
     networks:
       - football
     restart: always
+
+  streamlit:
+    image: python:3.9
+    command: bash -c "pip install streamlit psycopg2-binary && streamlit run /opt/airflow/include/streamlit_app.py --server.port=8502 --server.enableWebsocketCompression=false --server.enableCORS=false"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./pipelines:/opt/airflow/pipelines
+      - ./include:/opt/airflow/include
+    ports:
+      - "8502:8502"
+    networks:
+      - football
 
   scheduler:
     image: apache/airflow:2.6.0-python3.9
@@ -116,23 +126,23 @@ services:
       - ./pipelines:/opt/airflow/pipelines
     environment:
       - LOAD_EX=n
-      - Executor=Sequential
+      - Executor=LocalExecutor
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       - AIRFLOW__WEBSERVER_BASE_URL=http://localhost:8080
       - AIRFLOW__WEBSERVER__SECRET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
     deploy:
       resources:
         limits:
-          cpus: "1.5"           # Giới hạn 1.5 CPU cores
-          memory: 2.5g          # Giới hạn bộ nhớ 2.5GB
+          cpus: "1.5"  # Limit to 1.5 CPU cores
+          memory: 2.5g # Limit memory to 2.5GB
         reservations:
-          cpus: "1.0"           # Tài nguyên tối thiểu là 1 CPU
-          memory: 1.5g          # Bộ nhớ tối thiểu là 1.5GB
+          cpus: "1.0"  # Minimum of 1 CPU
+          memory: 1.5g # Minimum memory of 1.5GB
     command: bash -c "pip install --no-cache-dir -r ./requirements.txt && airflow db upgrade && airflow scheduler"
     networks:
       - football
     restart: always
-      
+
 networks:
   football:
 

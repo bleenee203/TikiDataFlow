@@ -25,15 +25,15 @@ dag = DAG(
 )
 
 # extract: crawl product data from tiki
-extract_from_tiki = PythonOperator(
-    task_id = "extract_data_from_tiki",
-    python_callable= extract_tiki_data,
-    provide_context=True,
-    # op_kwargs={
-    #     "url": "https://en.wikipedia.org/wiki/List_of_association_football_stadiums_by_capacity",
-    # },
-    dag=dag
-)
+# extract_from_tiki = PythonOperator(
+#     task_id = "extract_data_from_tiki",
+#     python_callable= extract_tiki_data,
+#     provide_context=True,
+#     # op_kwargs={
+#     #     "url": "https://en.wikipedia.org/wiki/List_of_association_football_stadiums_by_capacity",
+#     # },
+#     dag=dag
+# )
 # transform
 transform_tiki_data =PythonOperator(
     task_id = "transform_data_from_tiki",
@@ -65,4 +65,5 @@ visualization_tiki_data =PythonOperator(
 )
 
 
-extract_from_tiki >> transform_tiki_data >> load_tiki_data >> [visualization_tiki_data,process_tiki_data]
+# extract_from_tiki >> 
+transform_tiki_data >> load_tiki_data >> [visualization_tiki_data,process_tiki_data]
