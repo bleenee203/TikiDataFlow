@@ -12,6 +12,9 @@ from pipelines.load_tiki import load_tiki_data
 from pipelines.tranform_tiki import transform_tiki_data
 from pipelines.process_tiki import process_tiki_data
 from pipelines.visualization_tiki import visualization_tiki_data
+from include import streamlit_app
+from airflow.operators.bash import BashOperator
+
 
 dag = DAG(
     dag_id="tiki_flow",
@@ -64,6 +67,15 @@ visualization_tiki_data =PythonOperator(
     dag=dag
 )
 
+#streamlit
+run_streamlit = BashOperator(
+    task_id='run_streamlit_script',
+    # bash_command='streamlit run /include/streamlit_app.py',
+    bash_command='streamlit run /include/streamlit_app.py --server.port=8502 --server.enableWebsocketCompression=false --server.enableCORS=false',
+    dag=dag
+)
 
 # extract_from_tiki >> 
-transform_tiki_data >> load_tiki_data >> [visualization_tiki_data,process_tiki_data]
+transform_tiki_data >> load_tiki_data 
+>> run_streamlit
+>> [visualization_tiki_data,process_tiki_data]

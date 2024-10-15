@@ -104,7 +104,7 @@ services:
 
   streamlit:
     image: python:3.9
-    command: bash -c "pip install streamlit psycopg2-binary && streamlit run /opt/airflow/include/streamlit_app.py --server.port=8502 --server.enableWebsocketCompression=false --server.enableCORS=false"
+    command: bash -c "run /opt/airflow/include/streamlit_app.py --server.port=8502 --server.enableWebsocketCompression=false --server.enableCORS=false"
     volumes:
       - ./dags:/opt/airflow/dags
       - ./pipelines:/opt/airflow/pipelines
