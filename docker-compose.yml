@@ -1,7 +1,20 @@
 version: "3.8"
+
+x-spark-common: &spark-common
+  image: bitnami/spark:3.3.2
+  # build:
+  #   context: .
+  #   dockerfile: Dockerfile-spark
+  volumes:
+    - ./pipelines:/opt/bitnami/spark/jobs
+    - ./data:/opt/airflow/data
+    - ./postgresql-42.2.18.jar:/opt/bitnami/spark/jars/postgresql-42.2.18.jar
+  networks:
+    - football
 services:
   webserver:
-    image: apache/airflow:2.6.0-python3.9
+    # image: apache/airflow:2.6.0-python3.9
+    build: .
     command: webserver
     entrypoint: [ "/opt/airflow/script/entrypoint.sh" ]
     depends_on:
@@ -13,6 +26,7 @@ services:
       - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
       - AIRFLOW__WEBSERVER_BASE_URL=http://localhost:8080
       - AIRFLOW__WEBSERVER__SECRET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+      - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
     deploy:
       resources:
         limits:
@@ -105,7 +119,8 @@ services:
     restart: always
 
   scheduler:
-    image: apache/airflow:2.6.0-python3.9
+    # image: apache/airflow:2.6.0-python3.9
+    build: .
     depends_on:
       - webserver
       - chrome  
@@ -132,6 +147,44 @@ services:
     networks:
       - football
     restart: always
+
+  spark-master:
+    <<: *spark-common
+    command: bin/spark-class org.apache.spark.deploy.master.Master
+    environment:
+      - SPARK_MODE = master
+      - SPARK_MASTER_HOST=spark-master
+      # - SPARK_LOCAL_IP=172.18.0.3
+      - SPARK_NETWORK_TIMEOUT=6000s  # Set the network timeout to 600 seconds
+      - SPARK_EXECUTOR_HEARTBEATINTERVAL=1000s  # Set the heartbeat interval to 100 seconds
+      - SPARK_NETWORK_TIMEOUT=6000s
+      - SPARK_RPC_MESSAGE_MAX_SIZE=1024
+      - PYSPARK_PYTHON=/usr/bin/python3.9
+      - PYSPARK_DRIVER_PYTHON=/usr/bin/python3.9
+      
+    ports:
+      - "9090:8080"
+      - "7077:7077"
+        
+
+  spark-worker:
+    <<: *spark-common
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_MODE: worker
+      SPARK_WORKER_CORES: 6
+      SPARK_WORKER_MEMORY: 6g
+      SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_NETWORK_TIMEOUT : 6000s  # Set the network timeout to 600 seconds
+      SPARK_EXECUTOR_HEARTBEATINTERVAL : 1000s  # Set the heartbeat interval to 100 seconds
+      SPARK_RPC_MESSAGE_MAX_SIZE: 1024
+      PYSPARK_PYTHON: /usr/bin/python3.9
+      PYSPARK_DRIVER_PYTHON: /usr/bin/python3.9
+
+      
+
       
 networks:
   football:
