@@ -23,7 +23,7 @@ services:
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
-      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__WEBSERVER_BASE_URL=http://localhost:8080
       - AIRFLOW__WEBSERVER__SECRET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
       - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
@@ -117,6 +117,18 @@ services:
     networks:
       - football
     restart: always
+
+  streamlit:
+    image: python:3.9
+    command: bash -c "run /opt/airflow/include/streamlit_app.py --server.port=8502 --server.enableWebsocketCompression=false --server.enableCORS=false"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./pipelines:/opt/airflow/pipelines
+      - ./include:/opt/airflow/include
+    ports:
+      - "8502:8502"
+    networks:
+      - football
 
   scheduler:
     # image: apache/airflow:2.6.0-python3.9
