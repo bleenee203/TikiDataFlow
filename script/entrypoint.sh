@@ -6,6 +6,8 @@ set -e
 if [ ! -d "/opt/airflow/data" ]; then
   echo "Creating /opt/airflow/data directory..."
   mkdir -p /opt/airflow/data
+  mkdir -p /opt/airflow/data/output_data
+
 fi
 
 
