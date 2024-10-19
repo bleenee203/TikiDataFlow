@@ -1,5 +1,3 @@
-from airflow.providers.postgres.hooks.postgres import PostgresHook
-from sqlalchemy import create_engine
 import psycopg2
 import pandas as pd
 
@@ -9,13 +7,6 @@ def load_tiki_data():
     df = pd.read_csv('/opt/airflow/data/tiki_data_cleaned.csv')  
 
     print("Load thanh cong")
-
-     # Sử dụng PostgresHook để tạo engine
-    # postgres_hook = PostgresHook(postgres_conn_id='postgres_default')
-    # engine = postgres_hook.get_sqlalchemy_engine()
-    # engine = create_engine('postgresql+psycopg2://airflow:airflow@postgres:5432/airflow')
-    # print(engine)
-    # print(type(engine))  # Kiểm tra kiểu dữ liệu của engine
 
     # Kết nối tới PostgreSQL bằng psycopg2
     conn = psycopg2.connect(

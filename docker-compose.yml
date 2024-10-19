@@ -5,9 +5,11 @@ x-spark-common: &spark-common
   # build:
   #   context: .
   #   dockerfile: Dockerfile-spark
+  user: root
   volumes:
     - ./pipelines:/opt/bitnami/spark/jobs
     - ./data:/opt/airflow/data
+    - ./data/output_data:/opt/airflow/data/output_data
     - ./postgresql-42.2.18.jar:/opt/bitnami/spark/jars/postgresql-42.2.18.jar
   networks:
     - football
@@ -46,6 +48,8 @@ services:
       - ./data:/opt/airflow/data
       - ./pipelines:/opt/airflow/pipelines
       - /dev/shm:/dev/shm
+      - ./postgresql-42.2.18.jar:/opt/bitnami/spark/jars/postgresql-42.2.18.jar
+
     ports:
       - "8080:8080"
     healthcheck:
@@ -76,8 +80,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "2.0"         # Giới hạn 2 CPU cores cho Chrome
-          memory: 4g          # Giới hạn bộ nhớ 4GB cho Chrome
+          cpus: "8.0"         # Giới hạn 2 CPU cores cho Chrome
+          memory: 8g          # Giới hạn bộ nhớ 4GB cho Chrome
         reservations:
           cpus: "1.0"         # Tài nguyên tối thiểu là 1 CPU
           memory: 2g          # Bộ nhớ tối thiểu là 2GB
@@ -93,7 +97,6 @@ services:
       - POSTGRES_DB=airflow
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
-      # - ./data:/var/lib/postgresql/data
       - ./data:/opt/airflow/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
@@ -120,7 +123,8 @@ services:
 
   streamlit:
     image: python:3.9
-    command: bash -c "run /opt/airflow/include/streamlit_app.py --server.port=8502 --server.enableWebsocketCompression=false --server.enableCORS=false"
+    # command: bash -c "run /opt/airflow/include/streamlit_app.py --server.port=8502 --server.enableWebsocketCompression=false --server.enableCORS=false"
+    # command: bash -c "pip install --no-cache-dir streamlit && streamlit run /opt/streamlit_app/streamlit_app.py --server.port=8502 --server.enableWebsocketCompression=false --server.enableCORS=false"
     volumes:
       - ./dags:/opt/airflow/dags
       - ./pipelines:/opt/airflow/pipelines
@@ -141,6 +145,8 @@ services:
       - ./requirements.txt:/opt/airflow/requirements.txt
       - ./data:/opt/airflow/data
       - ./pipelines:/opt/airflow/pipelines
+      - ./postgresql-42.2.18.jar:/opt/bitnami/spark/jars/postgresql-42.2.18.jar
+
     environment:
       - LOAD_EX=n
       - Executor=Sequential
@@ -166,7 +172,6 @@ services:
     environment:
       - SPARK_MODE = master
       - SPARK_MASTER_HOST=spark-master
-      # - SPARK_LOCAL_IP=172.18.0.3
       - SPARK_NETWORK_TIMEOUT=6000s  # Set the network timeout to 600 seconds
       - SPARK_EXECUTOR_HEARTBEATINTERVAL=1000s  # Set the heartbeat interval to 100 seconds
       - SPARK_NETWORK_TIMEOUT=6000s

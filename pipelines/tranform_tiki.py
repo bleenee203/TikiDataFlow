@@ -6,17 +6,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def transform_tiki_data():
     print("Transform...")
-    # print(f"Current working directory: {os.getcwd()}")
-    # print(f"List of files: {os.listdir('/home/maibao/Documents/TikiDataFlow/data')}")
+    
     df = pd.read_csv('/opt/airflow/data/tiki_data.csv')
     print("Dữ liệu đã được tải")
     # Delete collumn unnecessary
     columns_to_drop = [
-    'Địa chỉ tổ chức chịu trách nhiệm về hàng hóa',
-    'Tên đơn vị/tổ chức chịu trách nhiệm về hàng hóa',
-    'Ngôn ngữ',
-    'Phương thức giao hàng Seller Delivery',
-    'Phiên bản'
+        'Địa chỉ tổ chức chịu trách nhiệm về hàng hóa',
+        'Tên đơn vị/tổ chức chịu trách nhiệm về hàng hóa',
+        'Ngôn ngữ',
+        'Phương thức giao hàng Seller Delivery',
+        'Phiên bản'
     ]
     df.drop(columns=columns_to_drop, inplace=True)
 
