@@ -1,4 +1,4 @@
-# Tiki DATA PIPELINE USING APACHE AIRFLOW
+# TIKI DATA PIPELINE USING APACHE AIRFLOW
 
 This project involves building an automated pipeline to scrape, process, store, query, and visualize data. The goal is to create an end-to-end solution for collecting web data, processing it for further analysis, storing it in a structured format, and providing an interactive dashboard for data visualization and insights.
 
